@@ -1,0 +1,94 @@
+---
+title: "Assignment 3"
+output: html_notebook
+---
+
+```{r}
+# import packages and dataset
+library(astsa)
+library(dynlm)
+library(dplyr)
+library(lmtest)
+library(ggplot2)
+library(forecast)
+
+d <- read.csv("C:/Users/c17kr/Dropbox/School Stuff/thegit/SoDA_496/Homework/hw3_data.csv")
+
+```
+
+
+```{r}
+### 1.
+
+# this dataset does not have dates in it, so we need to add them ourselves
+# no matter what I cannot get the date to be in mm/dd/yyyy format
+
+# set the start date and format, although format doesn't work
+dates <- as.Date("01/01/2023", format = "%m/%d/%Y") + 0:199
+
+# add the dates as a new column
+d$date <- dates
+```
+
+```{r}
+### 2.
+
+
+# plotting the time series as a line plot, also getting the mean
+# there is no "y" in the dataframe, only b and z so I chose to use z
+ggplot(d, aes(x = date, y = y)) + 
+  geom_line() +
+  labs(title = "Change in y over time",
+       x = "Date",
+       y = "y")
+
+
+mean(d$y)
+```
+
+The data appears to bounce all over the place with a lot of sudden increases and decreases. That being said, it does not seem to trend upwards or downwards significantly. The mean is about 6.6, and it seems to stick around that for the most part.
+
+
+```{r}
+### 3.
+
+
+# convert to a time series object
+d_ts <- ts(d$y, start = c(2023, 1), end = c(2023, 200), frequency = 7)# 200 days, 7day weeks
+
+# test for white noise
+Box.test(d_ts, type = "Ljung-Box")
+
+# p-value is very small, passes white noise test
+```
+
+
+```{r}
+### 4.
+acf(d$y)
+pacf(d$y)
+
+# very strange patterns
+
+# acf has 3 above blue line at first, but a few more pop up above the blue line further on.
+# going to choose AR3, say it exponentially declines
+
+# pacf has shut off on the postive side, but is below the blue dotted line then.
+# going to still count it as shutting off
+
+# fitting ar3 model
+yfit.ar3 <- sarima(d$y, p = 3, d = 0, q = 0, details = TRUE)
+
+# the residuals mostly stay within the blue lines, with select few exceptions.
+# the model fits well, but it could be better
+```
+
+
+```{r}
+### 5.
+
+# create the model with 3 lags and x as the control
+model <- dynlm(y ~ L(y,1) + L(y,2) + L(x,0:2), data = d)
+summary(model1)
+```
+
